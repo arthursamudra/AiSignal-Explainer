@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AiSignal | Explainable Observability</title>
+  <style>
+    :root {
+      --ibm-blue: #0f62fe;
+      --ibm-blue-hover: #0043ce;
+      --bg: #f4f4f4;
+      --text: #161616;
+      --muted: #525252;
+      --border: #e0e0e0;
+      --surface: #ffffff;
+      --dark: #161616;
+      --dark-2: #262626;
+      --red: #da1e28;
+      --yellow: #f1c21b;
+      --green: #24a148;
+      --purple: #8a3ffc;
+      --cyan: #1192e8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+
+    .topbar {
+      height: 52px;
+      background: #000;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid #393939;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      letter-spacing: .1px;
+    }
+
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      background: linear-gradient(135deg, var(--ibm-blue), #78a9ff);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .nav {
+      color: #c6c6c6;
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+    }
+
+    .hero {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(15,98,254,.34), transparent 34%),
+        linear-gradient(135deg, #000 0%, #161616 48%, #262626 100%);
+      color: #fff;
+      min-height: 620px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
+      gap: 48px;
+      align-items: center;
+      padding: 86px 7vw 72px;
+      overflow: hidden;
+    }
+
+    .eyebrow {
+      color: #78a9ff;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 6vw, 76px);
+      line-height: .98;
+      letter-spacing: -2px;
+      margin: 0 0 24px;
+      max-width: 880px;
+    }
+
+    .hero p {
+      max-width: 720px;
+      color: #e0e0e0;
+      font-size: 20px;
+      margin: 0 0 24px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 34px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 190px;
+      padding: 15px 18px;
+      border: 1px solid transparent;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .btn-primary { background: var(--ibm-blue); color: #fff; }
+    .btn-primary:hover { background: var(--ibm-blue-hover); }
+    .btn-secondary { border-color: #8d8d8d; color: #fff; }
+
+    .hero-panel {
+      background: rgba(38,38,38,.82);
+      border: 1px solid #525252;
+      box-shadow: 0 24px 80px rgba(0,0,0,.32);
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid #525252;
+      color: #f4f4f4;
+      font-weight: 600;
+    }
+
+    .critical-pill {
+      background: #da1e28;
+      color: white;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+
+    .diagnosis-card {
+      padding: 22px 20px;
+      border-bottom: 1px solid #393939;
+    }
+
+    .diagnosis-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .diagnosis-card p {
+      margin: 0;
+      font-size: 15px;
+      color: #c6c6c6;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: #393939;
+    }
+
+    .mini-metric {
+      background: #262626;
+      padding: 18px;
+    }
+
+    .mini-label { color: #a8a8a8; font-size: 12px; }
+    .mini-value { color: #fff; font-size: 24px; font-weight: 600; margin-top: 4px; }
+    .red { color: var(--red); }
+    .green { color: var(--green); }
+    .yellow { color: #f1c21b; }
+
+    .section {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: 72px 32px;
+    }
+
+    .section-title {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 36px;
+      align-items: start;
+      margin-bottom: 34px;
+    }
+
+    .section-title .kicker {
+      color: var(--ibm-blue);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1.05;
+      letter-spacing: -1px;
+      margin: 0 0 16px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 19px;
+      max-width: 780px;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 28px;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .compare-col {
+      background: #fff;
+      padding: 32px;
+      min-height: 320px;
+    }
+
+    .compare-col.dark-card {
+      background: #edf5ff;
+    }
+
+    .compare-col h3 {
+      margin: 0 0 16px;
+      font-size: 24px;
+    }
+
+    ul.clean {
+      list-style: none;
+      padding: 0;
+      margin: 18px 0 0;
+    }
+
+    ul.clean li {
+      padding: 13px 0 13px 28px;
+      border-top: 1px solid var(--border);
+      position: relative;
+      color: #393939;
+    }
+
+    ul.clean li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 21px;
+      width: 10px;
+      height: 10px;
+      background: #8d8d8d;
+    }
+
+    .dark-card ul.clean li::before { background: var(--ibm-blue); }
+
+    .value-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .value-item {
+      background: #fff;
+      padding: 28px;
+      min-height: 210px;
+    }
+
+    .value-icon {
+      width: 44px;
+      height: 44px;
+      background: #edf5ff;
+      color: var(--ibm-blue);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .value-item h3 { margin: 0 0 10px; font-size: 20px; }
+    .value-item p { margin: 0; color: var(--muted); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .flow-step {
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 22px;
+      position: relative;
+      min-height: 170px;
+    }
+
+    .flow-step::after {
+      content: "→";
+      position: absolute;
+      right: -15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ibm-blue);
+      font-size: 28px;
+      z-index: 2;
+    }
+
+    .flow-step:last-child::after { display: none; }
+    .step-number { color: var(--ibm-blue); font-size: 13px; font-weight: 700; margin-bottom: 22px; }
+    .flow-step h3 { margin: 0 0 10px; font-size: 18px; }
+    .flow-step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    .dark-section {
+      background: #161616;
+      color: #fff;
+    }
+
+    .dark-section .lead { color: #c6c6c6; }
+    .dark-section .card { background: #262626; border-color: #393939; }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr 90px 1fr 90px 1fr;
+      gap: 12px;
+      align-items: center;
+      margin-top: 30px;
+    }
+
+    .arch-box {
+      background: #262626;
+      border: 1px solid #525252;
+      padding: 26px;
+      min-height: 230px;
+    }
+
+    .arch-box h3 { margin: 0 0 14px; }
+    .arch-box p { color: #c6c6c6; margin: 0; }
+    .arch-arrow { color: #78a9ff; text-align: center; font-size: 36px; }
+
+    .report-shell {
+      background: #fff;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .report-toolbar {
+      height: 48px;
+      background: #262626;
+      color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      font-size: 14px;
+    }
+
+    .report-frame {
+      width: 100%;
+      height: 1560px;
+      border: 0;
+      display: block;
+      background: #fff;
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .code-card {
+      background: #161616;
+      color: #f4f4f4;
+      padding: 22px;
+      border: 1px solid #393939;
+    }
+
+    .code-card h3 {
+      margin: 0 0 14px;
+      color: #78a9ff;
+      font-size: 18px;
+    }
+
+    code, pre {
+      display: block;
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "IBM Plex Mono", Consolas, monospace;
+      color: #be95ff;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .prompt-card {
+      background: #0f172a;
+      color: #f8fafc;
+      border-left: 6px solid var(--ibm-blue);
+      padding: 26px;
+      margin-top: 24px;
+    }
+
+    .cta {
+      background: linear-gradient(135deg, #0f62fe, #6929c4);
+      color: #fff;
+      padding: 56px;
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .cta h2 { margin: 0; }
+    .cta p { color: #e0e0e0; font-size: 18px; margin: 16px 0 0; }
+
+    .footer {
+      background: #000;
+      color: #c6c6c6;
+      padding: 32px 7vw;
+      font-size: 14px;
+    }
+
+
+    .persona-grid {
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 28px;
+    }
+
+    .persona-card {
+      background: #fff;
+      padding: 32px;
+      min-height: 280px;
+    }
+
+    .persona-card.blue {
+      background: #edf5ff;
+    }
+
+    .persona-card h3 {
+      margin: 0 0 14px;
+      font-size: 24px;
+    }
+
+    .stack-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1px;
+      background: #393939;
+      border: 1px solid #393939;
+      margin-top: 28px;
+    }
+
+    .stack-item {
+      background: #262626;
+      color: #fff;
+      padding: 22px 18px;
+      min-height: 104px;
+    }
+
+    .stack-item span {
+      display: block;
+      color: #78a9ff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .market-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      background: #fff;
+      margin-top: 26px;
+    }
+
+    .market-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+    }
+
+    .market-table th {
+      background: #f4f4f4;
+      color: #161616;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .market-table td {
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      vertical-align: top;
+      color: #393939;
+    }
+
+    .market-table td:first-child {
+      font-weight: 600;
+      color: #161616;
+      background: #fafafa;
+    }
+
+    .check {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .partial {
+      color: #b28600;
+      font-weight: 700;
+    }
+
+    .no {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .economics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 26px;
+    }
+
+    .economics-card {
+      background: #fff;
+      padding: 32px;
+      min-height: 310px;
+    }
+
+    .economics-card.dark {
+      background: #161616;
+      color: #fff;
+    }
+
+    .economics-card.dark p,
+    .economics-card.dark li {
+      color: #c6c6c6;
+    }
+
+    .economics-card h3 {
+      margin: 0 0 14px;
+      font-size: 25px;
+    }
+
+    .cost-flow {
+      margin-top: 20px;
+      padding: 18px;
+      border-left: 4px solid var(--ibm-blue);
+      background: #edf5ff;
+      font-weight: 600;
+    }
+
+    .economics-card.dark .cost-flow {
+      background: #262626;
+      color: #fff;
+      border-left-color: #78a9ff;
+    }
+
+    .positioning-band {
+      background: linear-gradient(135deg, #001d6c, #0f62fe);
+      color: #fff;
+      padding: 42px;
+      margin-top: 34px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+    }
+
+    .positioning-band h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .positioning-band p {
+      margin: 0;
+      color: #e0e0e0;
+    }
+
+
+
+    .alert-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 28px;
+    }
+
+    .alert-card {
+      background: #fff;
+      padding: 32px;
+      min-height: 300px;
+    }
+
+    .alert-card.dark {
+      background: #161616;
+      color: #fff;
+    }
+
+    .alert-card.dark p,
+    .alert-card.dark li {
+      color: #c6c6c6;
+    }
+
+    .alert-card h3 {
+      margin: 0 0 14px;
+      font-size: 24px;
+    }
+
+    .trigger-flow {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      background: #393939;
+      border: 1px solid #393939;
+      margin-top: 28px;
+    }
+
+    .trigger-step {
+      background: #262626;
+      color: #fff;
+      padding: 22px 16px;
+      min-height: 145px;
+    }
+
+    .trigger-step span {
+      display: block;
+      color: #78a9ff;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .webhook-box {
+      background: #0f172a;
+      color: #f8fafc;
+      border-left: 6px solid var(--ibm-blue);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+
+    .product-shell {
+      background: #161616;
+      border: 1px solid #393939;
+      margin-top: 34px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.20);
+      overflow: hidden;
+    }
+
+    .product-topbar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: #000;
+      color: #f4f4f4;
+      border-bottom: 1px solid #393939;
+      font-size: 14px;
+    }
+
+    .product-topbar span:last-child { color: #78a9ff; }
+
+    .product-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr 360px;
+      min-height: 720px;
+    }
+
+    .product-sidebar {
+      background: #262626;
+      border-right: 1px solid #393939;
+      color: #c6c6c6;
+      padding: 20px 0;
+    }
+
+    .sidebar-item {
+      padding: 13px 20px;
+      border-left: 4px solid transparent;
+      font-size: 14px;
+    }
+
+    .sidebar-item.active {
+      color: #fff;
+      background: #393939;
+      border-left-color: #0f62fe;
+      font-weight: 600;
+    }
+
+    .product-main {
+      background: #f4f4f4;
+      padding: 24px;
+    }
+
+    .ui-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 22px;
+    }
+
+    .ui-header h3 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      letter-spacing: -.4px;
+    }
+
+    .ui-header p { margin: 0; color: #525252; }
+
+    .status-chip {
+      background: #fff1f1;
+      color: #da1e28;
+      border: 1px solid #ffb3b8;
+      padding: 8px 12px;
+      font-weight: 700;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .ui-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: #e0e0e0;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 22px;
+    }
+
+    .ui-metric {
+      background: #fff;
+      padding: 18px;
+    }
+
+    .ui-metric .label { color: #525252; font-size: 13px; }
+    .ui-metric .value { font-size: 28px; font-weight: 600; margin-top: 6px; }
+
+    .incident-list {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .incident-row {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .severity-bar { width: 12px; height: 100%; min-height: 64px; background: #da1e28; }
+    .severity-bar.warning { background: #f1c21b; }
+    .severity-bar.ok { background: #24a148; }
+
+    .incident-row h4 { margin: 0 0 5px; font-size: 17px; }
+    .incident-row p { margin: 0; color: #525252; font-size: 14px; }
+
+    .incident-action {
+      background: #0f62fe;
+      color: #fff;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .workspace-card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      padding: 20px;
+      min-height: 220px;
+    }
+
+    .workspace-card h4 {
+      margin: 0 0 14px;
+      color: #0f62fe;
+      font-size: 18px;
+    }
+
+    .evidence-step {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid #e0e0e0;
+      font-size: 14px;
+    }
+
+    .evidence-dot {
+      width: 26px;
+      height: 26px;
+      background: #edf5ff;
+      color: #0f62fe;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+
+
+    .analysis-workspace {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      margin: 22px 0;
+      overflow: hidden;
+    }
+
+    .analysis-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #f4f4f4;
+    }
+
+    .analysis-head h4 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      color: #161616;
+    }
+
+    .analysis-head p { margin: 0; color: #525252; font-size: 14px; }
+
+    .analysis-badge {
+      background: #edf5ff;
+      color: #0f62fe;
+      border: 1px solid #a6c8ff;
+      padding: 8px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .problem-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .problem-table th { background: #fff; color: #525252; font-weight: 600; text-align: left; }
+    .problem-table th, .problem-table td { border-bottom: 1px solid #e0e0e0; padding: 13px 16px; }
+    .problem-table tr.selected { background: #edf5ff; }
+
+    .severity-pill { display: inline-flex; padding: 4px 8px; font-size: 12px; font-weight: 700; }
+    .severity-pill.critical { background: #fff1f1; color: #da1e28; }
+    .severity-pill.warning { background: #fcf4d6; color: #8a6d00; }
+    .severity-pill.healthy { background: #defbe6; color: #0e6027; }
+
+    .analyze-btn {
+      background: #0f62fe;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .analysis-config {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: #e0e0e0;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .config-card { background: #fff; padding: 18px; min-height: 160px; }
+    .config-card h5 { margin: 0 0 12px; color: #0f62fe; font-size: 15px; }
+    .choice { padding: 7px 0; color: #393939; font-size: 14px; }
+    .choice.selected { font-weight: 700; color: #161616; }
+
+    .postmortem-preview {
+      background: #161616;
+      color: #f4f4f4;
+      padding: 20px;
+      border-top: 1px solid #393939;
+    }
+
+    .postmortem-preview h5 { margin: 0 0 14px; color: #78a9ff; font-size: 16px; }
+    .postmortem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .postmortem-box { background: #262626; border: 1px solid #393939; padding: 15px; }
+    .postmortem-box strong { color: #fff; }
+    .postmortem-box p { color: #c6c6c6; margin: 6px 0 0; font-size: 14px; }
+
+    .product-right {
+      background: #fff;
+      border-left: 1px solid #e0e0e0;
+      padding: 24px;
+    }
+
+    .ai-panel-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .ai-panel-title h3 { margin: 0; font-size: 22px; }
+    .confidence { color: #24a148; font-weight: 700; font-size: 13px; }
+
+    .ai-block {
+      margin-bottom: 20px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .ai-block h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #525252;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    .ai-block p { margin: 0; font-size: 15px; }
+
+    .quick-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .quick-action {
+      border: 1px solid #0f62fe;
+      color: #0f62fe;
+      padding: 11px 12px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .mock-caption {
+      background: #edf5ff;
+      border-left: 4px solid #0f62fe;
+      padding: 20px 24px;
+      margin-top: 22px;
+      color: #393939;
+    }
+
+    @media (max-width: 920px) {
+      .hero, .section-title, .comparison, .value-grid, .code-grid, .cta, .persona-grid, .economics-grid, .positioning-band, .alert-grid, .trigger-flow, .product-layout, .ui-metrics, .workspace-grid, .analysis-config, .postmortem-grid {
+        grid-template-columns: 1fr;
+      }
+      .stack-strip { grid-template-columns: 1fr; }
+      .flow, .architecture { grid-template-columns: 1fr; }
+      .flow-step::after, .arch-arrow { display: none; }
+      .nav { display: none; }
+      .hero { padding-top: 62px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">AI</div> AiSignal</div>
+    <nav class="nav">
+      <span>Problem</span><span>Approach</span><span>Market</span><span>Alerts</span><span>Product UI</span><span>Report</span>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Explainable observability for modern platforms</div>
+      <h1>Observability without explanation is not enough.</h1>
+      <p>Modern applications emit enormous volumes of metrics, logs, and traces. But teams still spend too much time moving between dashboards, correlating symptoms, and guessing the root cause.</p>
+      <p><strong>AiSignal turns telemetry into a single, explainable diagnosis — with evidence, impact, and recommended action.</strong></p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#report">View sample report <span>→</span></a>
+        <a class="btn btn-secondary" href="#pipeline">See the pipeline <span>↓</span></a>
+      </div>
+    </div>
+
+    <aside class="hero-panel">
+      <div class="panel-head">
+        <span>Service health diagnosis</span>
+        <span class="critical-pill">CRITICAL</span>
+      </div>
+      <div class="diagnosis-card">
+        <h3>qa-login authentication failures detected</h3>
+        <p>Latency and traffic look healthy, but exception patterns and login errors indicate a systemic authentication/session failure.</p>
+      </div>
+      <div class="mini-grid">
+        <div class="mini-metric"><div class="mini-label">Traffic</div><div class="mini-value green">0.87/s</div></div>
+        <div class="mini-metric"><div class="mini-label">Latency p95</div><div class="mini-value green">118ms</div></div>
+        <div class="mini-metric"><div class="mini-label">Error rate</div><div class="mini-value yellow">0.02%</div></div>
+        <div class="mini-metric"><div class="mini-label">Exceptions</div><div class="mini-value red">High</div></div>
+      </div>
+      <div class="diagnosis-card">
+        <h3>Likely root cause</h3>
+        <p><code style="display:inline;color:#ffb3b8;background:transparent;padding:0;">LoginException: Could not retrieve master session Id implicitly</code></p>
+      </div>
+    </aside>
+  </section>
+
+  <main>
+    <section class="section" id="problem">
+      <div class="section-title">
+        <div class="kicker">The shift</div>
+        <div>
+          <h2>From dashboard navigation to operational diagnosis.</h2>
+          <p class="lead">Traditional observability shows signals. AiSignal explains what those signals mean together.</p>
+        </div>
+      </div>
+
+      <div class="comparison">
+        <div class="compare-col">
+          <h3>Traditional observability</h3>
+          <p>Powerful, but still fragmented and human-correlation heavy.</p>
+          <ul class="clean">
+            <li>Metrics, logs, and traces live in separate workflows.</li>
+            <li>Engineers manually correlate signals under time pressure.</li>
+            <li>Dashboards show symptoms, not always explanation.</li>
+            <li>Root cause analysis depends on expert tribal knowledge.</li>
+          </ul>
+        </div>
+        <div class="compare-col dark-card">
+          <h3>AiSignal</h3>
+          <p>A diagnosis layer that converts telemetry into decision-ready insight.</p>
+          <ul class="clean">
+            <li>Single unified report across Prometheus, Loki, and Tempo.</li>
+            <li>Automatic signal correlation with supporting evidence.</li>
+            <li>Clear root cause hypothesis and confidence context.</li>
+            <li>Actionable next steps for SRE, DevOps, and engineering teams.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Business value</div>
+        <div>
+          <h2>Designed for faster incident understanding.</h2>
+          <p class="lead">AiSignal does not replace telemetry systems. It adds an intelligence layer that makes those systems easier to consume, explain, and act upon.</p>
+        </div>
+      </div>
+
+      <div class="value-grid">
+        <div class="value-item"><div class="value-icon">01</div><h3>Reduce noise</h3><p>Convert raw telemetry volume into concise, relevant incident narratives.</p></div>
+        <div class="value-item"><div class="value-icon">02</div><h3>Shorten RCA</h3><p>Correlate symptoms across logs, traces, and metrics before engineers begin investigation.</p></div>
+        <div class="value-item"><div class="value-icon">03</div><h3>Improve handoffs</h3><p>Create consistent reports that support SRE, development, QA, and management updates.</p></div>
+        <div class="value-item"><div class="value-icon">04</div><h3>Preserve evidence</h3><p>Every conclusion is linked back to telemetry signals, queries, and observed patterns.</p></div>
+      </div>
+    </section>
+
+
+    <section class="section" id="market">
+      <div class="section-title">
+        <div class="kicker">Market position</div>
+        <div>
+          <h2>AiSignal is not another observability platform.</h2>
+          <p class="lead">Datadog, Dynatrace, New Relic, and Splunk are powerful enterprise observability platforms. AiSignal is designed for teams that already run an open-source observability stack and want AI-powered diagnosis without replacing it.</p>
+        </div>
+      </div>
+
+      <div class="persona-grid">
+        <div class="persona-card">
+          <h3>Not the target customer</h3>
+          <p>Organizations that already standardized on full-suite enterprise observability platforms may already receive telemetry collection, dashboards, alerting, APM, service maps, security monitoring, digital experience monitoring, and cloud cost analytics in one commercial platform.</p>
+          <ul class="clean">
+            <li>They may already be deeply invested in Datadog, Dynatrace, New Relic, or Splunk.</li>
+            <li>Their core problem is not tooling availability.</li>
+            <li>They may not want another layer unless it adds strong explainability or institutional memory.</li>
+          </ul>
+        </div>
+        <div class="persona-card blue">
+          <h3>The AiSignal target customer</h3>
+          <p>Teams that intentionally use open-source observability want to keep licensing costs low while still improving incident understanding and reporting.</p>
+          <ul class="clean">
+            <li>They already run Prometheus, Loki, Tempo, and Grafana.</li>
+            <li>They pay $0 in core observability licensing fees.</li>
+            <li>They need faster RCA, better reports, and less manual dashboard correlation.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stack-strip">
+        <div class="stack-item"><span>01</span>OpenTelemetry instrumentation</div>
+        <div class="stack-item"><span>02</span>Prometheus metrics</div>
+        <div class="stack-item"><span>03</span>Loki logs</div>
+        <div class="stack-item"><span>04</span>Tempo traces</div>
+        <div class="stack-item"><span>05</span>AiSignal diagnosis</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Competitive landscape</div>
+        <div>
+          <h2>How AiSignal compares with enterprise observability products.</h2>
+          <p class="lead">AiSignal does not try to replace every feature of these platforms. It focuses on one sharp outcome: converting existing telemetry into explainable, evidence-backed operational intelligence.</p>
+        </div>
+      </div>
+
+      <div class="market-table-wrap">
+        <table class="market-table">
+          <tr>
+            <th>Capability</th>
+            <th>AiSignal</th>
+            <th>Datadog</th>
+            <th>Dynatrace</th>
+            <th>New Relic</th>
+            <th>Splunk</th>
+          </tr>
+          <tr>
+            <td>Primary role</td>
+            <td>AI diagnosis layer over existing OSS telemetry</td>
+            <td>Full observability platform</td>
+            <td>Full observability and AIOps platform</td>
+            <td>Full observability platform</td>
+            <td>Log analytics, observability, and security platform</td>
+          </tr>
+          <tr>
+            <td>AI incident reports</td>
+            <td><span class="check">Yes</span> — core capability</td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="check">Yes</span></td>
+          </tr>
+          <tr>
+            <td>Native fit for Prometheus + Loki + Tempo</td>
+            <td><span class="check">Yes</span> — designed for this stack</td>
+            <td><span class="partial">Partial</span> — typically via platform ingestion/integration</td>
+            <td><span class="partial">Partial</span> — typically via platform ingestion/integration</td>
+            <td><span class="partial">Partial</span> — typically via platform ingestion/integration</td>
+            <td><span class="partial">Partial</span> — strongest in log analytics ecosystem</td>
+          </tr>
+          <tr>
+            <td>Works without migrating observability backend</td>
+            <td><span class="check">Yes</span></td>
+            <td><span class="partial">Usually requires adopting Datadog workflows</span></td>
+            <td><span class="partial">Usually requires adopting Dynatrace workflows</span></td>
+            <td><span class="partial">Usually requires adopting New Relic workflows</span></td>
+            <td><span class="partial">Usually requires adopting Splunk workflows</span></td>
+          </tr>
+          <tr>
+            <td>Core observability licensing goal</td>
+            <td>Keep existing OSS stack and avoid new telemetry licensing</td>
+            <td>Commercial platform licensing</td>
+            <td>Commercial platform licensing</td>
+            <td>Commercial platform licensing</td>
+            <td>Commercial platform licensing</td>
+          </tr>
+          <tr>
+            <td>Per-host or telemetry-volume economics</td>
+            <td><span class="check">Avoided for core stack</span>; AiSignal priced as intelligence layer</td>
+            <td><span class="partial">Common commercial pricing driver</span></td>
+            <td><span class="partial">Common commercial pricing driver</span></td>
+            <td><span class="partial">Common commercial pricing driver</span></td>
+            <td><span class="partial">Common commercial pricing driver</span></td>
+          </tr>
+          <tr>
+            <td>Evidence-chain explanation</td>
+            <td><span class="check">Core design principle</span></td>
+            <td><span class="partial">Available in varying depth</span></td>
+            <td><span class="partial">Strong automated analysis, platform-centric</span></td>
+            <td><span class="partial">Available in varying depth</span></td>
+            <td><span class="partial">Available in varying depth</span></td>
+          </tr>
+          <tr>
+            <td>Best fit</td>
+            <td>OpenTelemetry-first teams that want low-cost AI RCA on top of existing tools</td>
+            <td>Teams wanting a complete managed observability suite</td>
+            <td>Enterprises wanting automated full-stack observability</td>
+            <td>Teams wanting hosted observability and telemetry analytics</td>
+            <td>Enterprises with heavy log, SIEM, and analytics needs</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Economics</div>
+        <div>
+          <h2>The business case is simple: keep $0 licensing for the telemetry stack.</h2>
+          <p class="lead">For teams already running Prometheus, Loki, Tempo, and Grafana, moving to a full commercial platform can be difficult to justify. AiSignal gives them a lower-cost path to AI-powered diagnosis.</p>
+        </div>
+      </div>
+
+      <div class="economics-grid">
+        <div class="economics-card">
+          <h3>Traditional enterprise observability</h3>
+          <p>Commercial platforms are powerful, but the cost model can grow as telemetry grows.</p>
+          <ul class="clean">
+            <li>Infrastructure monitored</li>
+            <li>Log ingestion volume</li>
+            <li>Trace ingestion volume</li>
+            <li>Retention and indexing needs</li>
+            <li>Platform-wide licensing commitments</li>
+          </ul>
+          <div class="cost-flow">More telemetry → more storage → higher commercial platform cost</div>
+        </div>
+
+        <div class="economics-card dark">
+          <h3>AiSignal with OSS observability</h3>
+          <p>AiSignal assumes telemetry already exists and focuses only on turning it into diagnosis.</p>
+          <ul class="clean">
+            <li>No replacement of Grafana dashboards</li>
+            <li>No re-instrumentation of services</li>
+            <li>No new telemetry agents required</li>
+            <li>No migration away from Loki, Tempo, or Prometheus</li>
+            <li>Priced as an intelligence layer, not a full telemetry platform</li>
+          </ul>
+          <div class="cost-flow">Existing telemetry → AI signal pack → RCA report → operational action</div>
+        </div>
+      </div>
+
+      <div class="positioning-band">
+        <div>
+          <h3>Keep the stack</h3>
+          <p>Prometheus, Loki, Tempo, and Grafana remain the source of truth.</p>
+        </div>
+        <div>
+          <h3>Add intelligence</h3>
+          <p>AiSignal queries endpoints, correlates signals, and generates explainable reports.</p>
+        </div>
+        <div>
+          <h3>Avoid replacement cost</h3>
+          <p>Teams gain AI diagnosis without adopting a full commercial observability suite.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Positioning</div>
+        <div>
+          <h2>Observability tells you what changed. AiSignal explains why.</h2>
+          <p class="lead">OpenTelemetry has solved instrumentation. Prometheus, Loki, and Tempo have solved telemetry storage. Grafana has solved visualization. AiSignal solves the final step: turning those signals into operational intelligence.</p>
+        </div>
+      </div>
+
+      <div class="comparison">
+        <div class="compare-col">
+          <h3>What teams have today</h3>
+          <ul class="clean">
+            <li>Dashboards showing latency, traffic, errors, and saturation.</li>
+            <li>Logs showing exceptions and failure messages.</li>
+            <li>Traces showing service paths and dependency timing.</li>
+            <li>Manual analysis to connect all three into a root-cause narrative.</li>
+          </ul>
+        </div>
+        <div class="compare-col dark-card">
+          <h3>What AiSignal adds</h3>
+          <ul class="clean">
+            <li>Unified diagnosis across metrics, logs, and traces.</li>
+            <li>Evidence chain explaining why a conclusion was reached.</li>
+            <li>Executive summary for non-technical stakeholders.</li>
+            <li>Action plan for SRE, DevOps, and application teams.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="dark-section" id="pipeline">
+      <div class="section">
+        <div class="section-title">
+          <div class="kicker">Architecture</div>
+          <div>
+            <h2>Telemetry remains the source of truth. AI becomes the explanation layer.</h2>
+            <p class="lead">AiSignal queries existing observability platforms, normalizes the signals, correlates them, and produces a structured operational report.</p>
+          </div>
+        </div>
+
+        <div class="architecture">
+          <div class="arch-box"><h3>Telemetry sources</h3><p>Prometheus for metrics, Loki for logs, Tempo for traces, and service metadata for deployment context.</p></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box"><h3>Signal correlation engine</h3><p>Normalizes time windows, extracts anomalies, joins logs with trace IDs, and prepares structured incident evidence.</p></div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box"><h3>AI diagnosis report</h3><p>Generates executive summary, root cause hypothesis, user impact, recommended actions, and validation queries.</p></div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="section" id="alerts">
+      <div class="section-title">
+        <div class="kicker">Alert-driven intelligence</div>
+        <div>
+          <h2>AiSignal can subscribe to Grafana and Prometheus alerts.</h2>
+          <p class="lead">AiSignal should not only generate reports on demand. It can listen to existing alert streams and automatically create an evidence-backed incident report when a service crosses a meaningful threshold.</p>
+        </div>
+      </div>
+
+      <div class="alert-grid">
+        <div class="alert-card">
+          <h3>Subscribe to existing alerting</h3>
+          <p>Most OpenTelemetry-first teams already have alert rules in Prometheus Alertmanager or Grafana Alerting. AiSignal can receive those alerts through webhook integrations and use them as the trigger for deeper analysis.</p>
+          <ul class="clean">
+            <li>Prometheus Alertmanager webhook integration.</li>
+            <li>Grafana Alerting contact point integration.</li>
+            <li>Service, severity, labels, annotations, and time window passed into AiSignal.</li>
+            <li>AiSignal expands the alert into logs, traces, metrics, deployment context, and likely root cause.</li>
+          </ul>
+        </div>
+        <div class="alert-card dark">
+          <h3>Set AiSignal-specific alert policies</h3>
+          <p>AiSignal can also define its own lightweight intelligence rules for signals that traditional alerts may miss, such as exception-pattern spikes, trace-error concentration, or deployment-linked regression patterns.</p>
+          <ul class="clean">
+            <li>Run cheap health scans across all registered services.</li>
+            <li>Generate AI reports only when something is worth explaining.</li>
+            <li>Avoid token waste by separating deterministic scans from AI diagnosis.</li>
+            <li>Create incident briefs, postmortem drafts, or daily health summaries depending on state.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="trigger-flow">
+        <div class="trigger-step"><span>01</span>Grafana or Prometheus alert fires</div>
+        <div class="trigger-step"><span>02</span>Webhook reaches AiSignal</div>
+        <div class="trigger-step"><span>03</span>AiSignal identifies service and time window</div>
+        <div class="trigger-step"><span>04</span>Metrics, logs, and traces are queried</div>
+        <div class="trigger-step"><span>05</span>Evidence pack is built</div>
+        <div class="trigger-step"><span>06</span>Incident report is delivered</div>
+      </div>
+
+      <div class="webhook-box"><pre>Example trigger payload
+
+{
+  "source": "grafana-alerting",
+  "service": "qa-login",
+  "severity": "critical",
+  "alert": "LoginException spike",
+  "startsAt": "2026-06-05T10:15:00Z",
+  "labels": {
+    "environment": "qa",
+    "team": "platform",
+    "service_name": "qa-login"
+  },
+  "annotations": {
+    "summary": "Authentication failures detected",
+    "runbook": "Check session store and auth dependency health"
+  }
+}</pre></div>
+    </section>
+
+
+    <section class="section" id="product-ui">
+      <div class="section-title">
+        <div class="kicker">Product experience</div>
+        <div>
+          <h2>A working product should feel like an AI SRE console.</h2>
+          <p class="lead">AiSignal can expose a clean operational workspace where teams see service health, alert-triggered incidents, evidence chains, AI recommendations, and incident memory — without leaving their existing Grafana, Prometheus, Loki, and Tempo stack.</p>
+        </div>
+      </div>
+
+      <div class="product-shell">
+        <div class="product-topbar"><strong>AiSignal Console</strong><span>Connected · Prometheus · Loki · Tempo · Grafana Alerts</span></div>
+        <div class="product-layout">
+          <aside class="product-sidebar">
+            <div class="sidebar-item active">Service Overview</div>
+            <div class="sidebar-item">Active Incidents</div>
+            <div class="sidebar-item">Run Explicit Analysis</div>
+            <div class="sidebar-item">AI Reports</div>
+            <div class="sidebar-item">Evidence Chains</div>
+            <div class="sidebar-item">Alert Subscriptions</div>
+            <div class="sidebar-item">Incident Memory</div>
+            <div class="sidebar-item">Postmortems</div>
+            <div class="sidebar-item">Settings</div>
+          </aside>
+
+          <section class="product-main">
+            <div class="ui-header">
+              <div>
+                <h3>Service Intelligence Overview</h3>
+                <p>40 services monitored · last scan 2 minutes ago · 1 critical · 3 warning · 36 healthy</p>
+              </div>
+              <div class="status-chip">Critical incident detected</div>
+            </div>
+
+            <div class="ui-metrics">
+              <div class="ui-metric"><div class="label">Services</div><div class="value">40</div></div>
+              <div class="ui-metric"><div class="label">Critical</div><div class="value red">1</div></div>
+              <div class="ui-metric"><div class="label">Warnings</div><div class="value yellow">3</div></div>
+              <div class="ui-metric"><div class="label">Healthy</div><div class="value green">36</div></div>
+            </div>
+
+            <div class="incident-list">
+              <div class="incident-row">
+                <div class="severity-bar"></div>
+                <div><h4>qa-login · Authentication failure spike</h4><p>Triggered by Grafana alert · LoginException pattern increased · evidence pack generated</p></div>
+                <div class="incident-action">Open report</div>
+              </div>
+              <div class="incident-row">
+                <div class="severity-bar warning"></div>
+                <div><h4>payment-api · Dependency latency warning</h4><p>Prometheus p95 latency breach · downstream gateway traces under review</p></div>
+                <div class="incident-action">Review</div>
+              </div>
+              <div class="incident-row">
+                <div class="severity-bar ok"></div>
+                <div><h4>profile-service · Healthy</h4><p>No abnormal exception pattern · traffic and latency within baseline</p></div>
+                <div class="incident-action">Snapshot</div>
+              </div>
+            </div>
+
+
+
+            <div class="analysis-workspace">
+              <div class="analysis-head">
+                <div>
+                  <h4>Run Explicit Analysis — Generate Postmortems On Demand</h4>
+                  <p>Select a problematic service, choose the investigation window, and generate a postmortem draft using metrics, logs, traces, deployment events, and incident memory.</p>
+                </div>
+                <div class="analysis-badge">On-demand mode</div>
+              </div>
+
+              <table class="problem-table">
+                <thead>
+                  <tr><th>Service</th><th>Severity</th><th>Primary signal</th><th>Suggested window</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                  <tr class="selected"><td><strong>qa-login</strong></td><td><span class="severity-pill critical">Critical</span></td><td>LoginException spike</td><td>Last 5 hours</td><td><span class="analyze-btn">Analyze</span></td></tr>
+                  <tr><td><strong>payment-api</strong></td><td><span class="severity-pill warning">Warning</span></td><td>p95 latency breach</td><td>Last 1 hour</td><td><span class="analyze-btn">Analyze</span></td></tr>
+                  <tr><td><strong>order-worker</strong></td><td><span class="severity-pill warning">Warning</span></td><td>Kafka consumer lag</td><td>Last 30 minutes</td><td><span class="analyze-btn">Analyze</span></td></tr>
+                  <tr><td><strong>profile-service</strong></td><td><span class="severity-pill healthy">Healthy</span></td><td>No active anomaly</td><td>Last 24 hours</td><td><span class="analyze-btn">Analyze</span></td></tr>
+                </tbody>
+              </table>
+
+              <div class="analysis-config">
+                <div class="config-card">
+                  <h5>Selected service</h5>
+                  <div class="choice selected">● qa-login</div>
+                  <div class="choice">Environment: QA</div>
+                  <div class="choice">Owner: Platform team</div>
+                  <div class="choice">Trigger: Grafana alert + anomaly scan</div>
+                </div>
+                <div class="config-card">
+                  <h5>Analysis window</h5>
+                  <div class="choice">○ Last 30 minutes</div>
+                  <div class="choice">○ Last 1 hour</div>
+                  <div class="choice selected">● Last 5 hours</div>
+                  <div class="choice">○ Custom range</div>
+                </div>
+                <div class="config-card">
+                  <h5>Include evidence</h5>
+                  <div class="choice selected">☑ Metrics</div>
+                  <div class="choice selected">☑ Logs</div>
+                  <div class="choice selected">☑ Traces</div>
+                  <div class="choice selected">☑ Deployment events + similar incidents</div>
+                </div>
+              </div>
+
+              <div class="postmortem-preview">
+                <h5>Generated postmortem preview</h5>
+                <div class="postmortem-grid">
+                  <div class="postmortem-box"><strong>Root cause hypothesis</strong><p>Session-store retrieval failure caused elevated login exceptions and unreliable authentication attempts.</p></div>
+                  <div class="postmortem-box"><strong>Evidence chain</strong><p>Exception spike → session retrieval error logs → failed auth traces → user login impact.</p></div>
+                  <div class="postmortem-box"><strong>Similar incident</strong><p>89% match with Incident #247. Previous resolution: restart session-store primary and validate auth config propagation.</p></div>
+                  <div class="postmortem-box"><strong>Export actions</strong><p>Export PDF · Publish to Confluence · Create ServiceNow incident · Send Teams summary.</p></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="workspace-grid">
+              <div class="workspace-card">
+                <h4>Evidence chain</h4>
+                <div class="evidence-step"><div class="evidence-dot">1</div><div><strong>Metric:</strong> Exception rate increased above baseline.</div></div>
+                <div class="evidence-step"><div class="evidence-dot">2</div><div><strong>Log:</strong> LoginException dominates failure window.</div></div>
+                <div class="evidence-step"><div class="evidence-dot">3</div><div><strong>Trace:</strong> Failure path points to session retrieval.</div></div>
+                <div class="evidence-step"><div class="evidence-dot">4</div><div><strong>Impact:</strong> New login attempts are at risk.</div></div>
+              </div>
+              <div class="workspace-card">
+                <h4>Incident memory match</h4>
+                <p><strong>89% similar</strong> to Incident #247: Redis/session lookup failure in qa-login.</p>
+                <p>Previous resolution: restart session-store primary and validate auth config propagation.</p>
+                <p>Previous MTTR: 8 minutes.</p>
+              </div>
+            </div>
+          </section>
+
+          <aside class="product-right">
+            <div class="ai-panel-title"><h3>AI Diagnosis</h3><span class="confidence">87% confidence</span></div>
+            <div class="ai-block"><h4>Likely root cause</h4><p>Authentication failures are most likely caused by session ID retrieval failure in the auth/session path.</p></div>
+            <div class="ai-block"><h4>Why this matters</h4><p>Traffic and latency are stable, but exception concentration indicates a logical failure impacting login reliability.</p></div>
+            <div class="ai-block"><h4>Recommended action</h4><p>Verify session-store connectivity, check recent deployment/config changes, and correlate failed traces with exception logs.</p></div>
+            <div class="ai-block"><h4>Generated outputs</h4><p>Incident brief ready · postmortem draft pending closure · Teams summary available.</p></div>
+            <div class="quick-actions">
+              <div class="quick-action">Generate postmortem draft</div>
+              <div class="quick-action">Open related Grafana logs</div>
+              <div class="quick-action">Create ServiceNow incident</div>
+              <div class="quick-action">Send Teams summary</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <div class="mock-caption"><strong>Product positioning:</strong> AiSignal is not another dashboarding tool. It is an AI SRE workspace that listens to alerts, lets users run explicit service analysis, builds evidence packs, generates postmortems on demand, remembers past incidents, and helps teams move from signal overload to operational decisions.</div>
+    </section>
+
+    <section class="section" id="report">
+      <div class="section-title">
+        <div class="kicker">Sample output</div>
+        <div>
+          <h2>AI-generated service report.</h2>
+          <p class="lead">The report below demonstrates how telemetry from Prometheus, Loki, and Tempo can be converted into an incident explanation.</p>
+        </div>
+      </div>
+
+      <div class="report-shell">
+        <div class="report-toolbar"><span>Generated report · qa-login · Last 5 hours</span><span>Evidence-backed diagnosis</span></div>
+        <iframe class="report-frame" srcdoc='
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { font-family: IBM Plex Sans, Arial, sans-serif; margin:0; background:#f4f4f4; color:#161616; }
+.header { background:#161616; color:#fff; padding:32px; border-bottom:4px solid #0f62fe; }
+.header h1 { margin:0 0 8px; font-size:34px; }
+.header p { margin:0; color:#c6c6c6; }
+.banner { padding:14px 32px; font-weight:700; background:#da1e28; color:#fff; letter-spacing:.3px; }
+.container { padding:28px; max-width:1060px; margin:auto; }
+.card { background:#fff; border:1px solid #e0e0e0; padding:24px; margin-bottom:20px; }
+h2 { margin:0 0 14px; color:#0f62fe; font-size:24px; }
+p { line-height:1.55; }
+.table { width:100%; border-collapse:collapse; font-size:14px; }
+.table th { background:#f4f4f4; text-align:left; }
+.table th, .table td { border:1px solid #e0e0e0; padding:12px; }
+.green { color:#24a148; font-weight:bold; }
+.orange { color:#b28600; font-weight:bold; }
+.red { color:#da1e28; font-weight:bold; }
+.codeblock { background:#161616; color:#ffb3b8; padding:16px; font-family:Consolas, monospace; white-space:pre-wrap; }
+.callout-critical { padding:16px; background:#fff1f1; border-left:5px solid #da1e28; }
+.callout-warning { padding:16px; background:#fff8e1; border-left:5px solid #f1c21b; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.action-list li { margin-bottom:10px; }
+@media(max-width:800px){ .grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="header"><h1>Service Report: qa-login</h1><p>Time Range: Last 5 Hours · Generated by AiSignal</p></div>
+<div class="banner">STATUS: CRITICAL — AUTHENTICATION FAILURES DETECTED</div>
+<div class="container">
+<div class="card"><h2>1. Executive Summary</h2><p>The <strong>qa-login</strong> service is experiencing a <span class="red">critical authentication issue</span>. Traffic and latency are stable, which means the service is reachable, but exception patterns indicate a systemic login/session failure that may block user access.</p></div>
+<div class="grid"><div class="card"><h2>2. Health Snapshot</h2><table class="table"><tr><th>Metric</th><th>Value</th><th>Status</th></tr><tr><td>Traffic</td><td>0.87 req/sec</td><td class="green">Healthy</td></tr><tr><td>Latency p95</td><td>118 ms</td><td class="green">Healthy</td></tr><tr><td>Error Rate</td><td>0.02%</td><td class="orange">Warning</td></tr><tr><td>Exception Rate</td><td>0.12/sec</td><td class="red">Critical</td></tr></table></div><div class="card"><h2>3. Interpretation</h2><p>The issue is not broad infrastructure saturation. The evidence points toward the authentication/session layer. Stable latency plus elevated login exceptions typically indicates a logical failure path rather than a platform-wide performance bottleneck.</p></div></div>
+<div class="card"><h2>4. Root Cause Evidence</h2><div class="codeblock">javax.security.auth.login.LoginException:
+Could not retrieve master session Id implicitly</div><p>This exception suggests the authentication workflow cannot retrieve or propagate the required master session identifier.</p></div>
+<div class="card"><h2>5. User Impact</h2><div class="callout-critical">Users may be unable to reliably log in. Existing sessions may continue working, but new authentication attempts are at risk.</div></div>
+<div class="card"><h2>6. Recommended Actions</h2><ul class="action-list"><li>Verify session store availability and recent configuration changes.</li><li>Check authentication service dependency health and token/session propagation.</li><li>Correlate failed login traces with exception logs using trace_id.</li><li>Add or validate tracing around session creation, lookup, and downstream auth calls.</li><li>Prepare rollback or configuration hotfix if the issue correlates with a recent release.</li></ul></div>
+<div class="card"><h2>7. Next Validation Queries</h2><div class="callout-warning">Confirm whether the error rate increased after a deployment, configuration change, or session-store dependency degradation.</div></div>
+</div>
+</body>
+</html>'></iframe>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Collection logic</div>
+        <div>
+          <h2>How telemetry is collected and correlated.</h2>
+          <p class="lead">AiSignal can use the same sources already deployed in an OpenTelemetry-backed stack.</p>
+        </div>
+      </div>
+
+      <div class="code-grid">
+        <div class="code-card"><h3>Metrics · Prometheus</h3><pre>sum(rate(http_server_request_duration_seconds_count{service_name="qa-login"}[5m]))
+
+histogram_quantile(0.95,
+  sum(rate(http_server_request_duration_seconds_bucket{service_name="qa-login"}[5m])) by (le)
+)</pre></div>
+        <div class="code-card"><h3>Logs · Loki</h3><pre>{service_name="qa-login"} |= "Exception"
+
+{service_name="qa-login"} | json | trace_id="{traceId}"</pre></div>
+        <div class="code-card"><h3>Traces · Tempo</h3><pre>GET /api/search?tags=resource.service.name=qa-login&minDuration=200ms&limit=5
+
+GET /api/traces/{traceId}</pre></div>
+        <div class="code-card"><h3>AI-ready input</h3><pre>{
+  "service": "qa-login",
+  "window": "last_5_hours",
+  "latency": "normal",
+  "exceptions": "high",
+  "dominant_error": "LoginException",
+  "trace_context": "partial"
+}</pre></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Processing pipeline</div>
+        <div>
+          <h2>Eight steps from raw signal to operational answer.</h2>
+          <p class="lead">The goal is not just summarization. The goal is structured reasoning over evidence.</p>
+        </div>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step"><div class="step-number">01–02</div><h3>Collect signals</h3><p>Query metrics from Prometheus and extract exception-heavy logs from Loki.</p></div>
+        <div class="flow-step"><div class="step-number">03–04</div><h3>Expand traces</h3><p>Retrieve trace IDs from Tempo and expand traces into spans and dependencies.</p></div>
+        <div class="flow-step"><div class="step-number">05–06</div><h3>Correlate evidence</h3><p>Join spans, logs, errors, and timestamps to identify the likely failure path.</p></div>
+        <div class="flow-step"><div class="step-number">07–08</div><h3>Generate report</h3><p>Prepare structured input and produce a human-readable diagnosis with actions.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">
+        <div class="kicker">Prompt pattern</div>
+        <div>
+          <h2>The AI prompt is evidence-first.</h2>
+          <p class="lead">The model receives structured facts, not an open-ended instruction to guess. This keeps the output explainable and grounded.</p>
+        </div>
+      </div>
+
+      <div class="prompt-card"><pre>Service: qa-login
+Time window: Last 5 hours
+Traffic: stable
+Latency: normal
+Error rate: warning
+Exceptions: high
+Dominant log pattern: LoginException - Could not retrieve master session Id implicitly
+Tracing: limited / unavailable for failing path
+
+Task:
+Generate a full SRE report with:
+1. Executive summary
+2. Health interpretation
+3. Likely root cause
+4. User impact
+5. Evidence table
+6. Recommended actions
+7. Validation queries
+
+Rules:
+- Do not invent unsupported facts.
+- Clearly separate observed evidence from inferred diagnosis.
+- Prioritize actionable remediation steps.</pre></div>
+    </section>
+
+    <section class="section">
+      <div class="cta">
+        <div>
+          <h2>AiSignal makes observability explainable.</h2>
+          <p>It helps teams move from “what dashboard should I check?” to “what is happening, why does it matter, and what should we do next?”</p>
+        </div>
+        <div><a class="btn btn-secondary" href="#problem">Back to top <span>↑</span></a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">AiSignal · Explainable Observability · Metrics + Logs + Traces + AI Diagnosis</footer>
+</body>
+</html>
